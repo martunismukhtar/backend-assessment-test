@@ -134,6 +134,19 @@ class DebitCardTransactionControllerTest extends TestCase
         $response = $this->getJson("/api/debit-card-transactions/{$trans->id}");
         $response->assertStatus(403);
     }
+    public function testCannotCreateTransactionWithInvalidData()
+    {
+        $card = DebitCard::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+        $response = $this->postJson("/api/debit-card-transactions", [
+            'debit_card_id' => $card->id,
+            'amount' => 'not_a_number',
+            'currency_code' => '',
+        ]);
 
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['amount', 'currency_code']);
+    }
     // Extra bonus for extra tests :)
 }
