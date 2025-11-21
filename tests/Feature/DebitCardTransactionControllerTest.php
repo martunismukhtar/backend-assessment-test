@@ -107,6 +107,18 @@ class DebitCardTransactionControllerTest extends TestCase
     public function testCustomerCanSeeADebitCardTransaction()
     {
         // get /debit-card-transactions/{debitCardTransaction}
+        $card = DebitCard::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+        $trans = DebitCardTransaction::factory()->create([
+            'debit_card_id' => $card->id,
+            'amount' => 100000,
+            'currency_code' => 'IDR',
+        ]);
+
+        $response = $this->getJson("/api/debit-card-transactions/{$trans->id}");
+        $response->assertStatus(200);
+
     }
 
     public function testCustomerCannotSeeADebitCardTransactionAttachedToOtherCustomerDebitCard()
