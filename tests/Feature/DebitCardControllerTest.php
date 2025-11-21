@@ -129,6 +129,16 @@ class DebitCardControllerTest extends TestCase
     public function testCustomerCannotUpdateADebitCardWithWrongValidation()
     {
         // put api/debit-cards/{debitCard}
+        $card = DebitCard::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        // wrong: number too short
+        $response = $this->putJson("/api/debit-cards/{$card->id}", [
+            'number' => '123',
+        ]);
+
+        $response->assertStatus(422);
     }
 
     public function testCustomerCanDeleteADebitCard()
