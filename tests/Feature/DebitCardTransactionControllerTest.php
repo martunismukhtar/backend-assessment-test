@@ -42,7 +42,6 @@ class DebitCardTransactionControllerTest extends TestCase
         $response = $this->getJson("/api/debit-card-transactions?debit_card_id={$debit_card_id}");
 
         $response->assertStatus(200);
-
     }
 
 
@@ -118,7 +117,6 @@ class DebitCardTransactionControllerTest extends TestCase
 
         $response = $this->getJson("/api/debit-card-transactions/{$trans->id}");
         $response->assertStatus(200);
-
     }
 
     public function testCustomerCannotSeeADebitCardTransactionAttachedToOtherCustomerDebitCard()
@@ -148,5 +146,22 @@ class DebitCardTransactionControllerTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['amount', 'currency_code']);
     }
+    public function testCurrencyMustBeValid()
+    {
+        $card = DebitCard::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $invalidCurrency = 'ABC'; // tidak ada dalam list
+
+        $response = $this->postJson('/api/debit-card-transactions', [
+            'debit_card_id' => $card->id,
+            'amount' => 100000,
+            'currency_code' => $invalidCurrency,
+        ]);
+
+        $response->assertStatus(422);
+    }
+
     // Extra bonus for extra tests :)
 }
