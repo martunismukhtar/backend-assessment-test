@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Passport\Passport;
 use Tests\TestCase;
+use Carbon\Carbon;
 
 class DebitCardControllerTest extends TestCase
 {
@@ -164,7 +165,7 @@ class DebitCardControllerTest extends TestCase
         $card = DebitCard::factory()->create([
             'user_id' => $this->user->id,
         ]);
-        // 2. Buat transaksi terkait debit card tersebut
+
         DebitCardTransaction::factory()->create([
             'debit_card_id' => $card->id,
             'amount' => 100000,
@@ -175,6 +176,38 @@ class DebitCardControllerTest extends TestCase
         $response->assertStatus(403); // atau 422 / 409 bergantung implementasi
 
     }
+    public function testDebitCardExpirationDateIsSetToNextYear()
+    {
+        // Freeze waktu
+        Carbon::setTestNow($now = now());
 
+        $payload = [
+            'type' => 'visa',
+        ];
+
+        $response = $this->postJson('/api/debit-cards', $payload);
+
+        $response->assertStatus(201);
+
+        $responseData = $response->json();
+        if (isset($responseData['data'])) {
+            $responseData = $responseData['data'];
+        }
+
+        $this->assertArrayHasKey('expiration_date', $responseData, 'Response tidak memiliki expiration_date');
+
+
+        $expirationDate = Carbon::parse($responseData['expiration_date']);
+
+        // Assert: expiration_date = now + 1 year
+        $this->assertTrue(
+            $expirationDate->toDateString() === $now->copy()->addYear()->toDateString(),
+            "Expiration date should be exactly 1 year from creation time, got: {$expirationDate->toDateString()}"
+        );
+
+        $this->assertTrue(\DB::table('debit_cards')->where('user_id', $this->user->id)->whereDate('expiration_date', $now->copy()->addYear()->toDateString())->exists(), 'Debit card with correct expiration date not found in DB');
+
+        Carbon::setTestNow();
+    }
     // Extra bonus for extra tests :)
 }
